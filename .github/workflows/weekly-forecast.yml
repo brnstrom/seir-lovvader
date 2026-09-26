@@ -1,0 +1,175 @@
+# Weekly live forecast for the Swedish Influenza Forecast Hub.
+#
+# Active once this directory is the root of its own repository (the hub does
+# not accept model code in its model-output folder). It checks out the hub,
+# refreshes SMHI temperatures, runs `python -m seirflu.weekly`, validates the
+# file with the hub's own validator, pushes a branch to your fork of the hub
+# and opens (or updates) a pull request against the hub. It also commits the
+# week's summary under results/live/ to this repository, which keeps a record
+# and keeps GitHub from pausing the schedule for inactivity.
+#
+# One-time setup:
+#   1. Fork philipgerlee/swedish_forecasting_hub to the account that owns
+#      this repository (keep the name swedish_forecasting_hub).
+#   2. Create a classic personal access token with the `public_repo` scope
+#      (fine-grained tokens cannot open pull requests in a repository you do
+#      not own) and store it as the repository secret HUB_PR_TOKEN.
+#   3. Run the workflow by hand (Actions > Weekly hub forecast > Run
+#      workflow) with "dry run" ticked to check everything except the push.
+#
+# Schedule (UTC): Friday and Saturday morning, Saturday afternoon and Sunday
+# afternoon. The hub imports the Folkhälsomyndigheten data through a pull
+# request that is merged by hand, usually Thursday or Friday. Until the new
+# week is in the hub the run fails with exit code 2 (GitHub e-mails a failed
+# run); the Sunday run forecasts with the data available instead. Later runs
+# only update the pull request if the forecast changed. Rounds outside the live
+# season (ISO weeks 40 to 20) are skipped. Submissions close Sunday 23:59
+# Europe/Stockholm.
+
+name: Weekly hub forecast
+
+on:
+  schedule:
+    - cron: "13 9 * * 5,6"    # Friday and Saturday 09:13 UTC
+    - cron: "13 16 * * 6"     # Saturday 16:13 UTC
+    - cron: "13 13 * * 0"     # Sunday 13:13 UTC, forecasts even without the newest week
+  workflow_dispatch:
+    inputs:
+      reference_date:
+        description: "Round Sunday (YYYY-MM-DD). Empty: the coming Sunday."
+        required: false
+        default: ""
+      dry_run:
+        description: "Forecast and validate only; no push or pull request."
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write   # only for committing results/live/ to this repository
+
+concurrency:
+  group: weekly-forecast
+  cancel-in-progress: false
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MODEL_ID: brannstrom-seirlovvader
+      UPSTREAM: philipgerlee/swedish_forecasting_hub
+      FORK: ${{ github.repository_owner }}/swedish_forecasting_hub
+      SEIRFLU_HUB_ROOT: ${{ github.workspace }}/hub
+      XLA_FLAGS: --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
+    steps:
+      - name: Check out the model
+        uses: actions/checkout@v4
+        with:
+          path: model
+
+      - name: Check out the hub
+        uses: actions/checkout@v4
+        with:
+          repository: philipgerlee/swedish_forecasting_hub
+          path: hub
+          fetch-depth: 0
+          # Without this, git would send this repository's token when pushing
+          # to the fork instead of HUB_PR_TOKEN, and the push would be refused.
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: model/requirements-lock.txt
+
+      - name: Install
+        run: |
+          python -m pip install -r model/requirements-lock.txt
+          python -m pip install -e hub/submission-validator
+
+      - name: Forecast
+        id: forecast
+        working-directory: model
+        env:
+          INPUT_REFERENCE_DATE: ${{ inputs.reference_date }}
+        run: |
+          extra=""
+          if [ "$(TZ=Europe/Stockholm date +%u)" = "7" ]; then extra="--allow-missing-last-week"; fi
+          python -m seirflu.weekly "$INPUT_REFERENCE_DATE" $extra --github-output "$GITHUB_OUTPUT"
+
+      - name: Add the model metadata if the hub does not have it yet
+        if: steps.forecast.outputs.skip == 'false'
+        working-directory: hub
+        run: |
+          if [ ! -f "model-metadata/$MODEL_ID.yml" ]; then
+            cp "$GITHUB_WORKSPACE/model/submission/model-metadata/$MODEL_ID.yml" model-metadata/
+            echo "Metadata added to this submission."
+          fi
+
+      - name: Validate
+        if: steps.forecast.outputs.skip == 'false'
+        working-directory: hub
+        env:
+          FILE: ${{ steps.forecast.outputs.file }}
+        run: |
+          validate-model-metadata "model-metadata/$MODEL_ID.yml"
+          validate-forecast-submission --require-all-locations \
+            --submitted-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$FILE"
+
+      - name: Record the forecast in this repository
+        if: steps.forecast.outputs.skip == 'false' && !inputs.dry_run
+        working-directory: model
+        env:
+          REF_DATE: ${{ steps.forecast.outputs.reference_date }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/live
+          if git diff --cached --quiet; then
+            echo "Nothing new to record."
+          else
+            git commit -m "Live forecast for ${REF_DATE}"
+            git push
+          fi
+
+      - name: Push to the fork and open a pull request
+        if: steps.forecast.outputs.skip == 'false' && !inputs.dry_run
+        working-directory: hub
+        env:
+          GH_TOKEN: ${{ secrets.HUB_PR_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REF_DATE: ${{ steps.forecast.outputs.reference_date }}
+          FILE: ${{ steps.forecast.outputs.file }}
+          BODY: ${{ steps.forecast.outputs.summary }}
+        run: |
+          git add "$FILE" "model-metadata/$MODEL_ID.yml"
+          if git diff --cached --quiet; then
+            echo "The hub already has exactly this forecast; nothing to do."
+            exit 0
+          fi
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The repository secret HUB_PR_TOKEN is missing."
+            exit 1
+          fi
+          branch="${MODEL_ID}-${REF_DATE}"
+          fork_url="https://x-access-token:${GH_TOKEN}@github.com/${FORK}.git"
+          gh repo sync "$FORK" --source "$UPSTREAM" --branch main || true
+          git config user.name "$OWNER"
+          git config user.email "${OWNER}@users.noreply.github.com"
+          git switch -c "$branch"
+          if git fetch --quiet "$fork_url" "$branch" 2>/dev/null && \
+             git diff --cached --quiet FETCH_HEAD -- "$FILE" "model-metadata/$MODEL_ID.yml"; then
+            echo "The fork already has this forecast on $branch; nothing to push."
+          else
+            git commit -m "${MODEL_ID}: forecast for ${REF_DATE}"
+            git push --force "$fork_url" "$branch"
+          fi
+          open=$(gh pr list --repo "$UPSTREAM" --head "$branch" --state open --json number --jq length)
+          if [ "$open" = "0" ]; then
+            gh pr create --repo "$UPSTREAM" --base main --head "${OWNER}:${branch}" \
+              --title "${MODEL_ID}: forecast for ${REF_DATE}" --body-file "$BODY"
+          else
+            echo "A pull request for $branch is already open; the push updated it."
+          fi

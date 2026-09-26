@@ -1,0 +1,13 @@
+reference_date,target,horizon,location,output_type,output_type_id,value
+2025-10-12,weekly incident influenza cases,0,SE,mean,,31.531385
+2025-10-12,weekly incident influenza cases,1,SE,mean,,43.581151
+2025-10-12,weekly incident influenza cases,2,SE,mean,,60.972059
+2025-10-12,weekly incident influenza cases,3,SE,mean,,87.042635
+2025-10-12,weekly incident influenza cases,0,SE-M,mean,,1.481966
+2025-10-12,weekly incident influenza cases,1,SE-M,mean,,1.642019
+2025-10-12,weekly incident influenza cases,2,SE-M,mean,,1.791319
+2025-10-12,weekly incident influenza cases,3,SE-M,mean,,1.952076
+2025-10-12,weekly incident influenza cases,0,SE-O,mean,,3.022939
+2025-10-12,weekly incident influenza cases,1,SE-O,mean,,3.643254
+2025-10-12,weekly incident influenza cases,2,SE-O,mean,,4.361907
+2025-10-12,weekly incident influenza cases,3,SE-O,mean,,5.258289

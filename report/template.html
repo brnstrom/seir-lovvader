@@ -1,0 +1,825 @@
+<title>Lov, väder och influensa</title>
+<meta name="description" content="SEIR-modell i kontinuerlig tid med skollov och en mättande temperatureffekt för den svenska influensaprognoshubben, med retrospektiva prognoser för 2025/26.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root {
+  --paper: #f4f5f3;
+  --surface: #fcfcfb;
+  --ink: #14181b;
+  --ink-2: #4a5156;
+  --muted: #7f858a;
+  --rule: #dcdfdb;
+  --grid: #e7e9e6;
+  --axis: #c3c6c2;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --band: rgba(20, 24, 27, 0.07);
+  --band-strong: rgba(42, 120, 214, 0.16);
+  --band-soft: rgba(42, 120, 214, 0.08);
+  --good: #006300;
+  --bad: #b3261e;
+  --chip: #e9ecea;
+  --focus: #2a78d6;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0e1011;
+    --surface: #16191a;
+    --ink: #f0f1ef;
+    --ink-2: #c2c6c2;
+    --muted: #8a8f93;
+    --rule: #2b2f31;
+    --grid: #23272a;
+    --axis: #3b3f42;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --band: rgba(240, 241, 239, 0.08);
+    --band-strong: rgba(57, 135, 229, 0.26);
+    --band-soft: rgba(57, 135, 229, 0.12);
+    --good: #3cbf3c;
+    --bad: #ef6b63;
+    --chip: #23282a;
+    --focus: #6aa8f0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0e1011;
+  --surface: #16191a;
+  --ink: #f0f1ef;
+  --ink-2: #c2c6c2;
+  --muted: #8a8f93;
+  --rule: #2b2f31;
+  --grid: #23272a;
+  --axis: #3b3f42;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --band: rgba(240, 241, 239, 0.08);
+  --band-strong: rgba(57, 135, 229, 0.26);
+  --band-soft: rgba(57, 135, 229, 0.12);
+  --good: #3cbf3c;
+  --bad: #ef6b63;
+  --chip: #23282a;
+  --focus: #6aa8f0;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.6;
+  padding-inline: 20px;
+  padding-block: 40px 72px;
+}
+.page { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 56px; }
+.page > *, section > *, figure > *, header > * { min-width: 0; }
+.prose { max-width: 68ch; display: grid; gap: 14px; }
+.prose p { margin: 0; }
+h1, h2, h3 { font-family: var(--sans); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); font-weight: 600; line-height: 1.08; }
+h2 { font-size: 1.45rem; font-weight: 600; line-height: 1.2; }
+h3 { font-size: 1.02rem; font-weight: 600; }
+.eyebrow {
+  font-family: var(--sans); font-size: 0.74rem; font-weight: 500; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted);
+}
+.lede { font-size: 1.14rem; color: var(--ink-2); max-width: 62ch; margin: 0; }
+header { display: grid; gap: 16px; padding-bottom: 28px; border-bottom: 1px solid var(--rule); }
+.meta { font-family: var(--sans); font-size: 0.82rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+section { display: grid; gap: 22px; }
+.section-head { display: grid; gap: 6px; }
+a { color: var(--s1); text-underline-offset: 2px; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.tile { background: var(--surface); padding: 16px 18px 18px; display: grid; gap: 4px; align-content: start; }
+.tile .k { font-family: var(--sans); font-size: 0.78rem; color: var(--ink-2); font-weight: 500; }
+.tile .v { font-family: var(--sans); font-size: 1.9rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+.tile .s { font-family: var(--sans); font-size: 0.78rem; color: var(--muted); }
+
+figure { margin: 0; display: grid; gap: 10px; }
+.figbox { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 16px 10px; position: relative; }
+figcaption { font-family: var(--sans); font-size: 0.84rem; color: var(--ink-2); max-width: 90ch; line-height: 1.5; }
+figcaption b { color: var(--ink); font-weight: 600; }
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--sans); fill: var(--muted); font-size: 11.5px; }
+.chart .lbl { fill: var(--ink-2); font-size: 12px; }
+.chart .lbl-strong { fill: var(--ink); font-size: 12.5px; font-weight: 500; }
+.chart .grid { stroke: var(--grid); stroke-width: 1; }
+.chart .axis { stroke: var(--axis); stroke-width: 1; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+.tip {
+  position: absolute; pointer-events: none; z-index: 5; min-width: 150px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12); padding: 8px 10px; font-family: var(--sans); font-size: 12px; line-height: 1.45;
+}
+.tip b { font-weight: 600; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+.tip .sw { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--sans); font-size: 0.8rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
+.legend i.dot { width: 8px; height: 8px; border-radius: 50%; }
+.legend i.band { height: 10px; border-radius: 2px; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-family: var(--sans); font-size: 0.84rem; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: inherit; font-size: 0.84rem; border: 0; background: transparent; color: var(--ink-2); padding: 7px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--chip); color: var(--ink); font-weight: 600; }
+.seg button:focus-visible, input[type="range"]:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { display: flex; align-items: center; gap: 10px; flex: 1 1 280px; min-width: 0; }
+.slider input { flex: 1; min-width: 0; accent-color: var(--s1); }
+.slider output { font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; font-weight: 500; }
+
+.eq {
+  font-family: var(--mono); font-size: 0.84rem; background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre; line-height: 1.6; color: var(--ink);
+}
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: 0.86rem; }
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 170px; }
+thead th { font-weight: 500; color: var(--ink-2); font-size: 0.78rem; background: var(--surface); }
+tbody tr:last-child td { border-bottom: 0; }
+td.best { font-weight: 600; }
+.cellbar { display: inline-grid; grid-template-columns: 34px 40px; align-items: center; gap: 6px; }
+.cellbar .track { height: 6px; background: var(--grid); border-radius: 3px; position: relative; overflow: hidden; }
+.cellbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--s1); border-radius: 3px; }
+.cellbar .fill.worse { background: var(--s2); }
+details { font-family: var(--sans); font-size: 0.84rem; color: var(--ink-2); }
+summary { cursor: pointer; color: var(--s1); }
+details .tablewrap { margin-top: 10px; }
+.note { font-family: var(--sans); font-size: 0.84rem; color: var(--ink-2); }
+footer { border-top: 1px solid var(--rule); padding-top: 22px; display: grid; gap: 10px; font-family: var(--sans); font-size: 0.84rem; color: var(--ink-2); }
+footer ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+@media (max-width: 880px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; padding-inline: 16px; padding-block: 28px 56px; }
+  .page { gap: 44px; }
+  .figbox { padding: 12px 10px 8px; }
+  .tile .v { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Svensk influensaprognoshub · modellbidrag</div>
+    <h1>Lov, väder och influensa</h1>
+    <p class="lede">En SEIR-modell i kontinuerlig tid där smittspridningen påverkas av skollov och temperatur. Effekterna är skattade på åtta tidigare säsonger, och modellen är provkörd på hubbens 33 fasta rundor för 2025/26 och i backtester på tre tidigare säsonger.</p>
+    <div class="meta"><span>Modell-id <span class="mono">brannstrom-seirlovvader</span></span><span>Utfallsdata version 2026-08-25</span></div>
+  </header>
+
+  <section aria-labelledby="h-sum">
+    <div class="section-head"><div class="eyebrow">Sammanfattning</div><h2 id="h-sum">Det här kom ut av det</h2></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="prose" id="summary-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-model">
+    <div class="section-head"><div class="eyebrow">Modellen</div><h2 id="h-model">SEIR som differentialekvationer, utvärderad vecka för vecka</h2></div>
+    <div class="prose">
+      <p>Modellen är den klassiska SEIR-modellen med exponentialfördelad latensperiod (medel 1,6 dagar) och smittsam period (medel 2,6 dagar). Infektionerna räknas i rapporterade fall, så att det mottagliga förrådet <i>K</i> är antalet fall som säsongen högst kan ge i data. <i>X</i> är det kumulativa antalet infektioner sedan fönstrets start.</p>
+      <p>Systemet löses numeriskt med Runge-Kuttas fjärdeordningsmetod och två steg per dygn, och reproduktionstalet hålls konstant inom varje dygn. Dagliga nya infektioner är ökningen av <i>X</i> under dygnet. De fördröjs till rapportdag med en gammafördelning, summeras över ISO-veckor (måndag till söndag) och jämförs med veckodata genom en negativ binomialfördelning. Modellen är alltså kontinuerlig i tiden och utvärderas i hela veckor, och tidssteget är fritt valt. Vid de skattade parametrarna skiljer sig log-likelihooden med ett, två eller fyra steg per dygn från den med åtta steg med <span id="steps-diff"></span>, så diskretiseringen spelar ingen roll.</p>
+    </div>
+    <div class="eq">dX/dt = (R(t)·γ·I + ι) · (K − X) / K
+dE/dt = dX/dt − σ·E            1/σ = 1,6 d
+dI/dt = σ·E − γ·I              1/γ = 2,6 d
+
+log R(t) = w(t) + θ_höst·h_höst(t) + θ_jul·h_jul(t) + θ_sport·h_sport(t)
+         + θ_påsk·h_påsk(t) + θ_sommar·h_sommar(t) + θ_T·(T(t) − 5 °C)
+
+alternativ: θ_T·(T − 5 °C) byts mot f(T) = A · [s((m − T)/b) − s((m − 5 °C)/b)],
+            s(z) = 1/(1 + e^(−z))
+
+rapporter(t) = Σ_d x(t−d) · g(d),   g ~ Gamma(medel 11 d, sd 4,5 d)</div>
+    <div class="prose">
+      <p><i>w</i>(<i>t</i>) är en slumpvandring med ett värde per vecka (standardavvikelse 0,07 per vecka, linjärt interpolerad mellan måndagar) som fångar långsamma förändringar som nya virusvarianter. <i>h</i> är den befolkningsviktade andelen kommuner med stängd skola för respektive lov, och <i>T</i> är den befolkningsviktade dygnsmedeltemperaturen. Temperaturtermen är log-linjär i huvudmodellen. Som alternativ prövades en sigmoid <i>f</i> som är noll vid 5&nbsp;°C och planar ut både i kyla och värme. På helgfria vardagar skjuts en skattad andel av dagens rapporter till nästa vardag.</p>
+    </div>
+    <figure>
+      <div class="figbox"><div class="chart" id="fig-scales" role="img" aria-label="Generationstidens fördelning och fördröjningen från infektion till rapport"></div></div>
+      <div class="legend" id="scales-legend"></div>
+      <figcaption><b>Figur 1.</b> Modellens två tidsskalor. Generationstiden, tiden mellan att en person smittas och att hen smittar nästa, följer av de två exponentiella stadierna. Fördröjningen från infektion till rapport skattades ur data.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-eff">
+    <div class="section-head"><div class="eyebrow">Skattade effekter</div><h2 id="h-eff">Så mycket ändras smittsamheten under lov och i kyla</h2></div>
+    <div class="prose">
+      <p>Effekterna är skattade gemensamt på Skåne, Västra Götaland och resten av Sverige under säsongerna 2015/16 till 2024/25, utan 2020/21 och 2021/22. Lovexponeringen är den befolkningsviktade andelen kommuner med stängd skola varje dag, hämtad ur kommunernas läsårstider. Sportlovet ligger vecka 7 i större delen av Västra Götaland, vecka 8 i Skåne och vecka 7 till 10 i resten av landet, och den förskjutningen hjälper skattningen.</p>
+    </div>
+    <div class="two">
+      <figure>
+        <div class="figbox"><div class="chart" id="fig-forest" role="img" aria-label="Skattade loveffekter på reproduktionstalet med 95-procentiga intervall"></div></div>
+        <figcaption><b>Figur 2.</b> Ändring i R under respektive lov, med 95&nbsp;% intervall. Små streck visar skattningen när en säsong i taget lämnas utanför.</figcaption>
+      </figure>
+      <figure>
+        <div class="figbox"><div class="chart" id="fig-temp" role="img" aria-label="Reproduktionstalets relativa nivå som funktion av dygnsmedeltemperaturen, sigmoid och log-linjär"></div></div>
+        <div class="legend" id="temp-legend"></div>
+        <figcaption><b>Figur 3.</b> R relativt nivån vid 5&nbsp;°C som funktion av dygnsmedeltemperaturen, med 95&nbsp;% intervall, för huvudmodellens log-linjära term och för sigmoiden. Staplarna visar hur många dygn i säsongerna (vecka 40 till 20) som hade respektive temperatur.</figcaption>
+      </figure>
+    </div>
+    <details>
+      <summary>Visa effekterna som tabell</summary>
+      <div class="tablewrap"><table id="tbl-effects"></table></div>
+    </details>
+    <div class="prose" id="effects-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-sel">
+    <div class="section-head"><div class="eyebrow">Modellval</div><h2 id="h-sel">Vad träningssäsongerna säger om modellens delar</h2></div>
+    <div class="prose">
+      <p>Modellens delar jämfördes på träningssäsongerna med Laplace-approximationen av den marginella likelihooden, log-evidensen. Jämförelserna görs kring den konfiguration som passar bäst, med sigmoid för temperaturen, och varje variant skiljer sig från den i ett avseende. En skillnad på några enheter är tydlig, en skillnad på hundra är överväldigande, och skillnader under en enhet ligger inom approximationens noggrannhet.</p>
+    </div>
+    <figure>
+      <div class="figbox"><div class="chart" id="fig-evidence" role="img" aria-label="Log-evidens för modellvarianter relativt huvudmodellen"></div></div>
+      <figcaption><b>Figur 4.</b> Log-evidens relativt referensen (0), som har sigmoid för temperaturen, 11 dagars rapportfördröjning och slumpvandring 0,07 per vecka. Huvudmodellen skiljer sig från referensen genom den log-linjära temperaturtermen. Negativa värden betyder att varianten förklarar träningssäsongerna sämre, positiva att den förklarar dem bättre.</figcaption>
+    </figure>
+    <div class="prose" id="sel-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-fit">
+    <div class="section-head"><div class="eyebrow">Anpassning</div><h2 id="h-fit">En säsong i detalj: Skåne 2024/25</h2></div>
+    <figure>
+      <div class="figbox"><div class="chart" id="fig-example" role="img" aria-label="Observerade och anpassade fall samt effektivt reproduktionstal i Skåne 2024/25"></div></div>
+      <figcaption id="example-caption"><b>Figur 5.</b> Överst veckofall (logaritmisk skala) med modellens anpassning. Nederst det effektiva reproduktionstalet, med lovperioderna markerade.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-retro">
+    <div class="section-head"><div class="eyebrow">Retrospektiv prognos 2025/26</div><h2 id="h-retro">Prognoser med bara det som var känt vid varje runda</h2></div>
+    <div class="prose">
+      <p>Varje runda använder bara den rundfil som hubben anger, avskuren vid rundans cutoff. Temperaturen efter cutoff är klimatologi plus den senaste veckans avvikelse som klingar av, så modellen vet inte om kommande köldperioder. Lov- och temperatureffekterna kommer från skattningen på tidigare säsonger och används som informativ prior.</p>
+    </div>
+    <figure>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Välj region" id="loc-seg"></div>
+        <div class="seg" role="group" aria-label="Välj skala" id="scale-seg"></div>
+        <label class="slider" for="round">Runda <input type="range" id="round" min="0" max="32" step="1" value="12"><output id="round-out" for="round"></output></label>
+      </div>
+      <div class="figbox"><div class="chart" id="fig-retro" role="img" aria-label="Observerade fall och prognoser för vald runda"></div></div>
+      <div class="legend" id="retro-legend"></div>
+      <figcaption><b>Figur 6.</b> Observerade veckofall (svart) och modellens punktprognoser för horisont 0 till 3 från varje runda (tunna linjer). Den valda rundan är framhävd med 80&nbsp;% och 95&nbsp;% prediktionsintervall. Punktprognosen är förväntat antal fall vid posteriormoden, se avsnittet om punktprognos nedan.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="figbox"><div class="chart" id="fig-mae" role="img" aria-label="Medelabsolutfel per horisont för SEIR-modellen och baslinjerna"></div></div>
+      <div class="legend" id="mae-legend"></div>
+      <figcaption><b>Figur 7.</b> Medelabsolutfel per horisont över de 33 rundorna, beräknat med hubbens egen utvärderingskedja. Lägre är bättre.</figcaption>
+    </figure>
+    <details>
+      <summary>Visa felmåtten som tabell</summary>
+      <div class="tablewrap"><table id="tbl-mae"></table></div>
+    </details>
+    <div class="prose" id="retro-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-abl">
+    <div class="section-head"><div class="eyebrow">Ablationer</div><h2 id="h-abl">Vad varje del bidrar med i prognoserna</h2></div>
+    <div class="prose">
+      <p>Varje variant har fått en egen skattning på träningssäsongerna och sedan körts genom samma 33 rundor och, utom de två sista raderna, genom backtester på 2022/23 till 2024/25, där effekterna skattades om utan den säsong som prognostiserades. Tabellen visar medelabsolutfelet relativt persistens, i genomsnitt över horisonterna. Värden under 1 är bättre än persistens.</p>
+    </div>
+    <div class="tablewrap"><table id="tbl-abl"></table></div>
+    <figure id="weather-figure">
+      <div class="figbox"><div class="chart" id="fig-weather" role="img" aria-label="Veckovis temperaturavvikelse från det normala under säsongen 2025/26"></div></div>
+      <figcaption><b>Figur 8.</b> Befolkningsviktad veckomedeltemperatur i Sverige 2025/26 minus det normala för årstiden (klimatologi från 2000 till 2025).</figcaption>
+    </figure>
+    <div class="prose" id="abl-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-point">
+    <div class="section-head"><div class="eyebrow">Punktprognos</div><h2 id="h-point">Varför punktprognosen är förväntat antal vid posteriormoden</h2></div>
+    <div class="prose">
+      <p>Hubben efterfrågar det förväntade antalet fall. Det Bayesianska prediktiva medelvärdet domineras här av en tung högersvans, eftersom en osäker tillväxttakt förstärks över fyra till fem veckor av infektioner som ännu inte syns i data. Tre punktprognoser jämfördes därför i rullande backtester på 2022/23 till 2024/25.</p>
+    </div>
+    <div class="tablewrap"><table id="tbl-backtest"></table></div>
+    <div class="prose" id="point-prose"></div>
+  </section>
+
+  <section aria-labelledby="h-lim">
+    <div class="section-head"><div class="eyebrow">Begränsningar</div><h2 id="h-lim">Det modellen inte fångar</h2></div>
+    <div class="prose" id="lim-prose"></div>
+  </section>
+
+  <footer>
+    <div class="eyebrow">Data och kod</div>
+    <ul>
+      <li>Fall: hubbens målfil och fasta rundfiler (Folkhälsodata, laboratoriebekräftad influensa, data version 2026-08-25).</li>
+      <li>Skollov: Skolporten, Grundskolans läsårstider 2016/17 till 2026/27, per kommun; befolkning: SCB 2024.</li>
+      <li>Temperatur: SMHI:s öppna data, dygnsmedeltemperatur från 26 stationer, befolkningsviktad per region.</li>
+      <li>Kod: Python-paketet <span class="mono">seirflu</span> i modellens kodrepo, med README, körinstruktioner och veckoworkflow.</li>
+    </ul>
+  </footer>
+</div>
+
+<script id="report-data" type="application/json">/*__DATA__*/</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById('report-data').textContent);
+  const NS = 'http://www.w3.org/2000/svg';
+  const LOCS = ['SE', 'SE-M', 'SE-O'];
+  const LOC_LABEL = { 'SE': 'Sverige', 'SE-M': 'Skåne', 'SE-O': 'Västra Götaland' };
+  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  const nf = (v, d = 0) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? '−' : '') + Math.abs(v).toLocaleString('sv-SE', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pctf = (v, d = 0) => { const r = Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v; return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('sv-SE', { minimumFractionDigits: d, maximumFractionDigits: d }) + '\u00a0%'; };
+  const cssv = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const dateOf = s => new Date(s + 'T12:00:00Z');
+  const fmtDate = d => `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  const isoWeek = d => { const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7); };
+
+  function svg(tag, attrs = {}, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function text(parent, x, y, str, attrs = {}) { const t = svg('text', { x, y, ...attrs }, parent); t.textContent = str; return t; }
+  const lin = (d0, d1, r0, r1) => { const f = v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); f.inv = p => d0 + (p - r0) / (r1 - r0) * (d1 - d0); return f; };
+  const logs = (d0, d1, r0, r1) => { const a = Math.log10(d0), b = Math.log10(d1); const f = v => r0 + (Math.log10(Math.max(v, d0 * 0.5)) - a) / (b - a) * (r1 - r0); return f; };
+  function niceTicks(min, max, n = 5) {
+    const span = max - min; const step0 = Math.pow(10, Math.floor(Math.log10(span / n))); const err = span / n / step0;
+    const step = step0 * (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1);
+    const out = []; for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(10)); return out;
+  }
+  function logTicks(min, max) { const out = []; for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++) for (const m of [1, 2, 5]) { const v = m * Math.pow(10, e); if (v >= min * 0.999 && v <= max * 1.001) out.push(v); } return out; }
+  function path(points) { let d = ''; let pen = false; for (const p of points) { if (p == null || !isFinite(p[0]) || !isFinite(p[1])) { pen = false; continue; } d += (pen ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1); pen = true; } return d; }
+
+  function tipFor(chartEl) {
+    let tip = chartEl.querySelector('.tip');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; chartEl.appendChild(tip); }
+    return {
+      show(html, x, y) {
+        tip.innerHTML = html; tip.hidden = false;
+        const w = chartEl.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+        let left = x + 14; if (left + tw > w) left = Math.max(0, x - tw - 14);
+        let top = y - th - 10; if (top < 0) top = y + 14;
+        tip.style.left = left + 'px'; tip.style.top = top + 'px';
+      },
+      hide() { tip.hidden = true; }
+    };
+  }
+  function mount(id, draw) {
+    const host = document.getElementById(id);
+    let lastW = 0;
+    const render = () => { const w = Math.max(280, Math.round(host.clientWidth)); if (w === lastW) return; lastW = w; [...host.querySelectorAll('svg')].forEach(s => s.remove()); draw(host, w); };
+    render();
+    new ResizeObserver(() => render()).observe(host);
+    return () => { lastW = 0; render(); };
+  }
+
+  // ---------------------------------------------------------------- shared numbers
+  const E = D.effects, TE = E.temperature;
+  const byKey = Object.fromEntries(E.holidays.map(r => [r.key, r]));
+  const EV = D.evidence;
+  const ev = Object.fromEntries(EV.rows.map(r => [r.key, r]));
+  const rel = Object.fromEntries(LOCS.map(l => { const m = D.hub.points[l]; const s = m['SEIR (denna modell)'].mae, p = m['Persistens'].mae; return [l, s.reduce((a, v, i) => a + v / p[i], 0) / s.length]; }));
+  const abl = D.ablations;
+  const getAbl = (tag, point = 'map_mean') => abl.find(r => r.tag === tag && r.point === point);
+  const avg = r => r ? (r.SE + r['SE-M'] + r['SE-O']) / 3 : null;
+  const bavg = r => r && r.backtest ? (r.backtest.SE + r.backtest['SE-M'] + r.backtest['SE-O']) / 3 : null;
+  const P = TE.points;
+
+  // ---------------------------------------------------------------- tiles and summary
+  const tiles = [
+    ['Jullov', pctf(byKey.theta_jul.est), `R, 95\u00a0% KI ${pctf(byKey.theta_jul.lo)} till ${pctf(byKey.theta_jul.hi)}`],
+    ['Sportlov', pctf(byKey.theta_sport.est), `R, 95\u00a0% KI ${pctf(byKey.theta_sport.lo)} till ${pctf(byKey.theta_sport.hi)}`],
+    ['Påsklov', pctf(byKey.theta_pask.est), `R, 95\u00a0% KI ${pctf(byKey.theta_pask.lo)} till ${pctf(byKey.theta_pask.hi)}`],
+    ['En grad kallare', pctf(TE.perDegreeColder, 1), `R, 95\u00a0% KI ${pctf(TE.perDegreeLo, 1)} till ${pctf(TE.perDegreeHi, 1)}; sigmoiden planar ut under −5\u00a0°C`],
+    ['Prognosfel mot persistens, Skåne', nf(rel['SE-M'], 2), `Sverige ${nf(rel['SE'], 2)}, Västra Götaland ${nf(rel['SE-O'], 2)}`],
+  ];
+  document.getElementById('tiles').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+    {
+    const main = getAbl('main'), noT = getAbl('no-temperature'), noHol = getAbl('no-holidays'), sigm = getAbl('sigmoid-temperature');
+    const pctLower = l => Math.round((1 - rel[l]) * 100);
+    const voText = Math.abs(rel['SE-O'] - 1) < 0.05 ? 'ligger den ungefär som persistens' : (rel['SE-O'] < 1 ? `har den ${pctLower('SE-O')}\u00a0% lägre fel` : `har den ${Math.round((rel['SE-O'] - 1) * 100)}\u00a0% högre fel än persistens`);
+    const tempBack = noT && bavg(noT) != null && bavg(main) < bavg(noT);
+    const temp2526 = noT && avg(main) < avg(noT);
+    const gc = EV.gammaComparison;
+    document.getElementById('summary-prose').innerHTML = `
+    <p>Modellen är en SEIR-modell i kontinuerlig tid med exponentialfördelade stadier, som löses numeriskt med två steg per dygn och jämförs med data vecka för vecka. Exponentiella stadier förklarar historiken ${gc && Math.abs(gc.ode - gc.gamma) < 1.5 ? 'lika bra som' : 'ungefär lika bra som'} de gammafördelade stadierna i den tidigare versionen. Jullov, sportlov och påsklov sänker smittsamheten tydligt, höstlovet har ingen påvisbar effekt, och kyla höjer den.</p>
+    <p>Temperatursambandet mattas av i kyla. En sigmoid förklarar träningssäsongerna klart bättre än en log-linjär term och planar ut under ungefär −5&nbsp;°C, men i prognoserna var den log-linjära termen genomgående något bättre, så huvudmodellen använder den.</p>
+    <p>I den retrospektiva körningen för 2025/26 har modellen ${pctLower('SE-M')}\u00a0% lägre medelabsolutfel än persistens i Skåne och ${pctLower('SE')}\u00a0% lägre för hela Sverige, i genomsnitt över horisonterna. I Västra Götaland ${voText}. Loven förbättrar prognoserna tydligt. Temperaturen ${tempBack ? 'hjälper i backtesterna på tre tidigare säsonger' : 'hjälper inte i backtesterna'}${temp2526 ? ' och gjorde det även 2025/26' : ' men gjorde prognoserna sämre 2025/26'}. Detaljerna finns längre ned.</p>`;
+  }
+
+
+  const steps = EV.steps || [];
+  const maxStepDiff = steps.filter(s => s.steps !== 8).reduce((a, s) => Math.max(a, Math.abs(s.diff)), 0);
+  const two = steps.find(s => s.steps === 2);
+  document.getElementById('steps-diff').textContent = !steps.length ? 'mindre än en halv enhet' : (maxStepDiff < 0.01 ? 'mindre än 0,01 enheter' : `högst ${nf(maxStepDiff, 2)} enheter`);
+
+  // ---------------------------------------------------------------- Figure 1: time scales
+  const SC = D.delays;
+  const SCALE_SERIES = [
+    { key: 'generation', c: '--s1', name: `Generationstid (medel ${nf(SC.generationSummary.mean, 1)} d)` },
+    { key: 'report', c: '--s2', name: `Infektion till rapport (medel ${nf(SC.reportMean, 0)} d)` },
+  ];
+  document.getElementById('scales-legend').innerHTML = SCALE_SERIES.map(s => `<span><i style="background:var(${s.c})"></i>${s.name}</span>`).join('');
+  mount('fig-scales', (host, W) => {
+    const H = Math.round(Math.min(280, Math.max(210, W * 0.36)));
+    const m = { l: 44, r: 16, t: 14, b: 38 };
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const tmax = 30;
+    const gen = SC.t.map((t, i) => [t, SC.generation[i]]);
+    const rep = SC.report.map((v, d) => [d, v]);
+    const ymax = Math.max(...gen.map(p => p[1]), ...rep.map(p => p[1])) * 1.12;
+    const x = lin(0, tmax, m.l, W - m.r), y = lin(0, ymax, H - m.b, m.t);
+    for (const t of niceTicks(0, ymax, 4)) { svg('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), class: t === 0 ? 'axis' : 'grid' }, s); text(s, m.l - 8, y(t) + 4, nf(t * 100, 0) + ' %', { 'text-anchor': 'end' }); }
+    for (const d of [0, 5, 10, 15, 20, 25, 30]) text(s, x(d), H - m.b + 18, d, { 'text-anchor': 'middle' });
+    text(s, (m.l + W - m.r) / 2, H - 4, 'dagar efter smittan', { 'text-anchor': 'middle' });
+    svg('path', { d: path(gen.map(p => [x(p[0]), y(p[1])])), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 2 }, s);
+    svg('path', { d: path(rep.map(p => [x(p[0]), y(p[1])])), fill: 'none', stroke: cssv('--s2'), 'stroke-width': 2 }, s);
+    for (const p of rep) svg('circle', { cx: x(p[0]), cy: y(p[1]), r: 2.6, fill: cssv('--s2') }, s);
+    const tip = tipFor(host);
+    const hit = svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, s);
+    const cross = svg('line', { y1: m.t, y2: H - m.b, stroke: cssv('--axis'), 'stroke-width': 1, visibility: 'hidden' }, s);
+    hit.addEventListener('pointermove', ev => {
+      const r = s.getBoundingClientRect(); const d = Math.min(tmax, Math.max(0, Math.round(x.inv((ev.clientX - r.left) * W / r.width))));
+      const gi = SC.t.indexOf(d);
+      cross.setAttribute('x1', x(d)); cross.setAttribute('x2', x(d)); cross.setAttribute('visibility', 'visible');
+      tip.show(`<b>Dag ${d}</b><div class="row"><span><span class="sw" style="background:var(--s1)"></span>Generationstid</span><span>${nf(100 * SC.generation[gi], 1)}\u00a0%</span></div><div class="row"><span><span class="sw" style="background:var(--s2)"></span>Till rapport</span><span>${d < SC.report.length ? nf(100 * SC.report[d], 1) + ' %' : '–'}</span></div>`, x(d) * r.width / W, ev.clientY - r.top);
+    });
+    hit.addEventListener('pointerleave', () => { tip.hide(); cross.setAttribute('visibility', 'hidden'); });
+  });
+
+  // ---------------------------------------------------------------- Figure 2: forest plot
+  mount('fig-forest', (host, W) => {
+    const rows = E.holidays;
+    const rowH = 46; const m = { l: 92, r: 18, t: 10, b: 40 };
+    const H = m.t + m.b + rows.length * rowH;
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const lo = -40, hi = 40;
+    const x = lin(lo, hi, m.l, W - m.r);
+    for (const t of [-40, -20, 0, 20, 40]) { svg('line', { x1: x(t), x2: x(t), y1: m.t, y2: H - m.b, class: t === 0 ? 'axis' : 'grid' }, s); text(s, x(t), H - m.b + 18, pctf(t), { 'text-anchor': 'middle' }); }
+    text(s, (m.l + W - m.r) / 2, H - 4, 'ändring i R', { 'text-anchor': 'middle' });
+    const tip = tipFor(host);
+    rows.forEach((r, i) => {
+      const cy = m.t + i * rowH + rowH / 2;
+      const weak = r.key === 'theta_sommar' || r.key === 'theta_host';
+      text(s, m.l - 12, cy + 4, r.label, { 'text-anchor': 'end', class: 'lbl-strong' });
+      for (const v of r.loso) svg('line', { x1: x(v), x2: x(v), y1: cy - 9, y2: cy - 4, stroke: cssv('--muted'), 'stroke-width': 1.5 }, s);
+      svg('line', { x1: x(Math.max(lo, r.lo)), x2: x(Math.min(hi, r.hi)), y1: cy + 3, y2: cy + 3, stroke: weak ? cssv('--muted') : cssv('--s1'), 'stroke-width': 2, 'stroke-linecap': 'round' }, s);
+      svg('circle', { cx: x(r.est), cy: cy + 3, r: 5, fill: weak ? cssv('--muted') : cssv('--s1'), stroke: cssv('--surface'), 'stroke-width': 2 }, s);
+      const hit = svg('rect', { x: m.l, y: cy - rowH / 2, width: W - m.l - m.r, height: rowH, fill: 'transparent', tabindex: 0 }, s);
+      const html = `<b>${r.label}</b><div class="row"><span>Skattning</span><span>${pctf(r.est, 1)}</span></div><div class="row"><span>95\u00a0% intervall</span><span>${pctf(r.lo, 0)} till ${pctf(r.hi, 0)}</span></div><div class="row"><span>En säsong utelämnad</span><span>${pctf(Math.min(...r.loso), 0)} till ${pctf(Math.max(...r.loso), 0)}</span></div>`;
+      const show = ev => { const b = s.getBoundingClientRect(); tip.show(html, ev ? ev.clientX - b.left : x(r.est) * b.width / W, (cy) * b.height / H); };
+      hit.addEventListener('pointermove', show); hit.addEventListener('focus', () => show()); hit.addEventListener('pointerleave', () => tip.hide()); hit.addEventListener('blur', () => tip.hide());
+    });
+  });
+
+  // ---------------------------------------------------------------- Figure 3: temperature response
+  document.getElementById('temp-legend').innerHTML = `<span><i style="background:var(--s1)"></i>Log-linjär (huvudmodell)</span><span><i style="background:var(--s2)"></i>Sigmoid</span><span><i class="band" style="background:var(--band)"></i>Dygn i säsongerna</span>`;
+  mount('fig-temp', (host, W) => {
+    const H = Math.round(Math.max(300, Math.min(360, W * 0.62))); const m = { l: 44, r: 16, t: 12, b: 40 };
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const G = TE.grid, S = TE.curves.sigmoid, L = TE.curves.linear;
+    const t0 = G[0], t1 = G[G.length - 1];
+    const ylo = 0.5, yhi = Math.min(1.9, Math.max(1.6, ...L.est, ...S.hi) * 1.04);
+    const x = lin(t0, t1, m.l, W - m.r);
+    const yl = v => Math.log(v);
+    const y = (() => { const f = lin(yl(ylo), yl(yhi), H - m.b, m.t); return v => f(yl(Math.min(yhi, Math.max(ylo, v)))); })();
+    // histogram of days at the bottom
+    const maxDays = Math.max(...TE.days); const hh = (H - m.t - m.b) * 0.22;
+    TE.days.forEach((n, i) => { const a = x(Math.max(t0, TE.bins[i])), b = x(Math.min(t1, TE.bins[i + 1])); if (b <= a) return; svg('rect', { x: a + 0.5, y: H - m.b - hh * n / maxDays, width: Math.max(0, b - a - 1), height: hh * n / maxDays, fill: cssv('--band') }, s); });
+    for (const v of [0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8].filter(v => v <= yhi)) { svg('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: v === 1 ? 'axis' : 'grid' }, s); text(s, m.l - 8, y(v) + 4, nf(v, 1), { 'text-anchor': 'end' }); }
+    for (const t of (W < 560 ? [-10, 0, 10, 20] : [-15, -10, -5, 0, 5, 10, 15, 20])) if (t >= t0 && t <= t1) text(s, x(t), H - m.b + 18, nf(t) + '\u00a0°C', { 'text-anchor': 'middle' });
+    text(s, (m.l + W - m.r) / 2, H - 4, 'dygnsmedeltemperatur', { 'text-anchor': 'middle' });
+    const band = (c, fill) => { const up = G.map((t, i) => [x(t), y(c.hi[i])]); const dn = G.map((t, i) => [x(t), y(c.lo[i])]).reverse(); svg('path', { d: path(up) + 'L' + path(dn).slice(1) + 'Z', fill, stroke: 'none' }, s); };
+    band(S, cssv('--band')); band(L, cssv('--band-strong'));
+    svg('path', { d: path(G.map((t, i) => [x(t), y(S.est[i])])), fill: 'none', stroke: cssv('--s2'), 'stroke-width': 2, 'stroke-dasharray': '6 4' }, s);
+    svg('path', { d: path(G.map((t, i) => [x(t), y(L.est[i])])), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 2.5 }, s);
+    svg('line', { x1: x(5), x2: x(5), y1: m.t, y2: H - m.b, stroke: cssv('--axis'), 'stroke-width': 1 }, s);
+    const tip = tipFor(host);
+    const hit = svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, s);
+    const dot = svg('circle', { r: 4.5, fill: cssv('--s1'), stroke: cssv('--surface'), 'stroke-width': 2, visibility: 'hidden' }, s);
+    hit.addEventListener('pointermove', ev => {
+      const b = s.getBoundingClientRect(); const t = Math.round(x.inv((ev.clientX - b.left) * W / b.width) * 2) / 2;
+      const i = Math.min(G.length - 1, Math.max(0, G.indexOf(Math.min(t1, Math.max(t0, t))))); const tt = G[i];
+      const bi = TE.bins.findIndex((v, k) => k < TE.bins.length - 1 && tt >= v && tt < TE.bins[k + 1]);
+      dot.setAttribute('cx', x(tt)); dot.setAttribute('cy', y(L.est[i])); dot.setAttribute('visibility', 'visible');
+      tip.show(`<b>${nf(tt, 1)}\u00a0°C</b><div class="row"><span>Log-linjär</span><span>${nf(L.est[i], 2)} (${nf(L.lo[i], 2)} till ${nf(L.hi[i], 2)})</span></div><div class="row"><span>Sigmoid</span><span>${nf(S.est[i], 2)} (${nf(S.lo[i], 2)} till ${nf(S.hi[i], 2)})</span></div><div class="row"><span>Dygn i data</span><span>${bi >= 0 ? nf(TE.days[bi]) : '–'}</span></div>`, x(tt) * b.width / W, y(L.est[i]) * b.height / H);
+    });
+    hit.addEventListener('pointerleave', () => { tip.hide(); dot.setAttribute('visibility', 'hidden'); });
+  });
+
+  // effects table
+  const tempRows = ['-15', '-10', '-5', '0', '10', '15', '20'].map(t => `<tr><td>R vid ${nf(+t)}\u00a0°C mot 5\u00a0°C</td><td>${pctf(P[t].linear.est, 1)}</td><td>${pctf(P[t].linear.lo, 1)} till ${pctf(P[t].linear.hi, 1)}</td><td></td><td>${pctf(P[t].sigmoid.est, 1)} (${pctf(P[t].sigmoid.lo, 0)} till ${pctf(P[t].sigmoid.hi, 0)})</td></tr>`).join('');
+  document.getElementById('tbl-effects').innerHTML = `<thead><tr><th>Effekt</th><th>Ändring i R</th><th>95\u00a0% intervall</th><th>En säsong utelämnad</th><th>Med sigmoid för temperaturen</th></tr></thead><tbody>` +
+    E.holidays.map(r => `<tr><td>${r.label}</td><td>${pctf(r.est, 1)}</td><td>${pctf(r.lo, 1)} till ${pctf(r.hi, 1)}</td><td>${pctf(Math.min(...r.loso), 1)} till ${pctf(Math.max(...r.loso), 1)}</td><td>${pctf(r.sigmoid, 1)}</td></tr>`).join('') +
+    `<tr><td>En grad kallare</td><td>${pctf(TE.perDegreeColder, 2)}</td><td>${pctf(TE.perDegreeLo, 2)} till ${pctf(TE.perDegreeHi, 2)}</td><td>${pctf(Math.min(...TE.losoPerDegree), 2)} till ${pctf(Math.max(...TE.losoPerDegree), 2)}</td><td></td></tr>` + tempRows +
+    `<tr><td>Sigmoidens amplitud A (log R)</td><td></td><td></td><td></td><td>${nf(TE.amplitude, 2)} (${nf(TE.amplitudeLo, 2)} till ${nf(TE.amplitudeHi, 2)})</td></tr>` +
+    `<tr><td>Sigmoidens mittpunkt m</td><td></td><td></td><td></td><td>${nf(TE.mid, 1)}\u00a0°C (${nf(TE.midLo, 1)} till ${nf(TE.midHi, 1)})</td></tr>` +
+    `<tr><td>Sigmoidens bredd b</td><td></td><td></td><td></td><td>${nf(TE.width, 1)}\u00a0°C (${nf(TE.widthLo, 1)} till ${nf(TE.widthHi, 1)})</td></tr></tbody>`;
+    {
+    const hs = byKey.theta_host, so = byKey.theta_sommar;
+    const sig = t => P[t].sigmoid.est, linp = t => P[t].linear.est;
+    const extra = 100 * ((1 + sig('-15') / 100) / (1 + sig('-5') / 100) - 1);
+    const slope = Math.log(1 + TE.perDegreeColder / 100);
+    const c = slope * TE.width / TE.amplitude;
+    let steep = '';
+    if (c < 0.25) { const sh = (1 + Math.sqrt(1 - 4 * c)) / 2; const z = Math.log(sh / (1 - sh)); steep = ` Sigmoiden är brantare än den log-linjära termen mellan ungefär ${nf(TE.mid - z * TE.width, 0)} och ${nf(TE.mid + z * TE.width, 0)}&nbsp;°C, där en stor del av säsongens dygn ligger.`; }
+    document.getElementById('effects-prose').innerHTML = `
+    <p>Jullovet har den största och säkraste effekten, ${pctf(byKey.theta_jul.est)} i R. Det fångar mer än skolstängning, eftersom även många vuxna är lediga. Sportlovet ger ${pctf(byKey.theta_sport.est)} och påsklovet ${pctf(byKey.theta_pask.est)}. Höstlovet har ingen påvisbar effekt (${pctf(hs.est)}, intervall ${pctf(hs.lo)} till ${pctf(hs.hi)}), vilket är rimligt eftersom smittspridningen i vecka 44 oftast är låg och data därför säger lite. Skattningarna ändras lite när en säsong i taget lämnas utanför, och de är nästan desamma med sigmoid för temperaturen.</p>
+    <p>Effekterna är större uttryckta i R än i den tidigare versionen med gammafördelade stadier, där jullovet gav −21\u00a0%. Det beror på att generationstiden blir längre med exponentiella stadier (${nf(D.delays.generationSummary.mean, 1)} mot 3,1 dagar), och då motsvarar samma förändring i tillväxttakt en större förändring i R. Det är tillväxttakten som data bestämmer.</p>
+    <p>I huvudmodellen ökar R med ${pctf(TE.perDegreeColder, 1)} per grad kallare. Sigmoiden visar att sambandet inte är log-linjärt i hela intervallet. Den är brantast kring ${nf(TE.mid, 1)}&nbsp;°C, och mellan kallt och varmt väder skiljer sig R som mest en faktor ${nf(Math.exp(TE.amplitude), 2)}. Från 5&nbsp;°C till −5&nbsp;°C ökar R med ${pctf(sig('-5'))} enligt sigmoiden, men att gå vidare till −15&nbsp;°C lägger bara till ${pctf(extra)}. Den log-linjära termen ger ${pctf(linp('-15'))} vid −15&nbsp;°C mot sigmoidens ${pctf(sig('-15'))}, och på den varma sidan planar sigmoiden ut över 15&nbsp;°C. Mättnaden i kyla stämmer med modeller där influensans spridning beror på den absoluta luftfuktigheten, som avtar ungefär exponentiellt med temperaturen och redan är låg när det är några minusgrader.</p>
+    <p>Sigmoiden passar träningssäsongerna klart bättre, men den log-linjära termen gav lägre prognosfel i alla tre backtestsäsongerna och 2025/26, och därför används den i huvudmodellen.${steep} Där förstärker sigmoiden prognosernas reaktion på köldperioder och på den säsongsmässiga avkylningen under hösten, och det har inte gett bättre prognoser.</p>
+    <p>Sommarlovet kan inte skattas meningsfullt. Skattningen blir ${pctf(so.est)}, men influensan är i stort sett borta på sommaren och lovet sammanfaller med de varmaste veckorna. Utan temperaturterm blir skattningen ${pctf(so.noTemp)}. Termen påverkar inte prognoserna, som gäller vecka 40 till 20. På helgfria vardagar skjuts omkring ${nf(E.postponedShare * 100)}\u00a0% av rapporterna till nästa vardag.</p>`;
+  }
+
+
+  // ---------------------------------------------------------------- Figure 4: evidence
+  mount('fig-evidence', (host, W) => {
+    const rows = EV.rows.filter(r => r.key !== EV.reference).sort((a, b) => b.delta - a.delta);
+    const labelW = Math.min(280, Math.max(150, W * 0.38));
+    const rowH = 30, m = { l: labelW, r: 30, t: 10, b: 34 };
+    const H = m.t + m.b + rows.length * rowH;
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const minD = Math.min(0, ...rows.map(r => r.delta)), maxD = Math.max(0, ...rows.map(r => r.delta));
+    const pad = (maxD - minD) * 0.16;
+    const x = lin(minD - pad, maxD + Math.max(pad * 0.4, 8), m.l, W - m.r);
+    for (const t of niceTicks(minD, maxD, 5)) { svg('line', { x1: x(t), x2: x(t), y1: m.t, y2: H - m.b, class: t === 0 ? 'axis' : 'grid' }, s); text(s, x(t), H - m.b + 18, nf(t), { 'text-anchor': 'middle' }); }
+    const tip = tipFor(host);
+    rows.forEach((r, i) => {
+      const cy = m.t + i * rowH + rowH / 2;
+      text(s, m.l - 10, cy + 4, r.label, { 'text-anchor': 'end', class: 'lbl' });
+      const xa = Math.min(x(r.delta), x(0)), xb = Math.max(x(r.delta), x(0));
+      svg('rect', { x: xa, y: cy - 8, width: Math.max(2, xb - xa), height: 16, rx: 3, fill: r.delta > 0 ? cssv('--s3') : cssv('--s1'), opacity: 0.9 }, s);
+      if (r.delta < 0) text(s, xa - 6, cy + 4, nf(r.delta, 1), { 'text-anchor': 'end', class: 'lbl' });
+      else text(s, xb + 6, cy + 4, '+' + nf(r.delta, 1), { 'text-anchor': 'start', class: 'lbl' });
+      const hit = svg('rect', { x: 0, y: cy - rowH / 2, width: W, height: rowH, fill: 'transparent' }, s);
+      hit.addEventListener('pointermove', ev2 => { const b = s.getBoundingClientRect(); tip.show(`<b>${r.label}</b><div class="row"><span>log-evidens</span><span>${nf(r.logZ, 1)}</span></div><div class="row"><span>mot huvudmodellen</span><span>${r.delta > 0 ? '+' : ''}${nf(r.delta, 1)}</span></div>`, ev2.clientX - b.left, cy * b.height / H); });
+      hit.addEventListener('pointerleave', () => tip.hide());
+    });
+  });
+    {
+    const d = k => ev[k] ? ev[k].delta : NaN;
+    const gc = EV.gammaComparison;
+    const gammaText = gc ? ` Med samma inställningar som den tidigare versionen, alltså log-linjär temperatur och 9,5 dagars fördröjning, har ODE-modellen log-evidens ${nf(gc.ode, 1)} mot ${nf(gc.gamma, 1)} för versionen med gammafördelade stadier.` : '';
+    document.getElementById('sel-prose').innerHTML = `
+    <p>Lov och temperatur förbättrar anpassningen kraftigt, med ${nf(-d('no-holidays'), 0)} respektive ${nf(-d('no-temperature'), 0)} enheter och ${nf(-d('no-holidays-no-temperature'), 0)} tillsammans. Sigmoiden är ${nf(-d('linear'), 1)} enheter bättre än den log-linjära temperaturtermen, vilket är en tydlig skillnad i anpassning. Huvudmodellen använder ändå den log-linjära termen, eftersom den gav bättre prognoser (se ablationerna).</p>
+    <p>Data föredrar en effektiv tid från infektion till rapport på omkring 11 dagar. Med 9,5 och 12,5 dagar blir evidensen ${nf(d('delay9.5'), 1)} och ${nf(d('delay12.5'), 1)} enheter, och med 6,5 dagar ${nf(d('delay6.5'), 0)}. Fördröjningen är längre än inkubation och vårdsökande. En trolig förklaring är att de rapporterade fallen domineras av vuxna och äldre, som smittas ungefär en generation efter de kedjor bland skolbarn som loven bryter. Slumpvandringens skala spelar liten roll mellan 0,07 och 0,09 per vecka.</p>
+    <p>Exponentiella stadier kostar ingenting i anpassning.${gammaText} Sommarlovstermen och den fördröjda rapporteringen på helgdagar ändrar evidensen med under en enhet. De behålls eftersom de beskriver kända mönster och inte påverkar prognoserna under säsongen.</p>`;
+  }
+
+
+  // ---------------------------------------------------------------- Figure 5: example season
+  mount('fig-example', (host, W) => {
+    const ex = D.example; const n = ex.weeks.length;
+    const m = { l: 48, r: 16, t: 12, b: 34 }; const H1 = Math.round(Math.max(190, W * 0.26)), gap = 26, H2 = Math.round(Math.max(150, W * 0.18));
+    const H = m.t + H1 + gap + H2 + m.b;
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const dates = ex.weeks.map(dateOf);
+    const x = lin(0, n - 1, m.l, W - m.r);
+    const obs = ex.observed.filter(v => v != null && v > 0);
+    const yMax = Math.max(...obs, ...ex.fitted) * 1.3;
+    const y1 = logs(1, yMax, m.t + H1, m.t);
+    const top2 = m.t + H1 + gap, y2 = lin(0.5, 1.7, top2 + H2, top2);
+    const hol = [['jul', 'jul'], ['sport', 'sport'], ['host', 'höst'], ['pask', 'påsk']];
+    for (const [key, name] of hol) {
+      const v = ex[key]; let i = 0;
+      while (i < n) {
+        if (v[i] > 0.25) { let j = i; while (j + 1 < n && v[j + 1] > 0.25) j++; const xa = x(i) - (x(1) - x(0)) / 2, xb = x(j) + (x(1) - x(0)) / 2;
+          svg('rect', { x: xa, y: m.t, width: xb - xa, height: H1, fill: cssv('--band') }, s);
+          svg('rect', { x: xa, y: top2, width: xb - xa, height: H2, fill: cssv('--band') }, s);
+          text(s, (xa + xb) / 2, top2 + 13, name, { 'text-anchor': 'middle', class: 'lbl' }); i = j + 1; } else i++;
+      }
+    }
+    for (const t of logTicks(1, yMax)) { svg('line', { x1: m.l, x2: W - m.r, y1: y1(t), y2: y1(t), class: 'grid' }, s); text(s, m.l - 8, y1(t) + 4, nf(t), { 'text-anchor': 'end' }); }
+    for (const t of [0.6, 0.8, 1.0, 1.2, 1.4, 1.6]) { svg('line', { x1: m.l, x2: W - m.r, y1: y2(t), y2: y2(t), class: t === 1 ? 'axis' : 'grid' }, s); text(s, m.l - 8, y2(t) + 4, nf(t, 1), { 'text-anchor': 'end' }); }
+    text(s, m.l + 6, m.t + 12, 'fall per vecka', { class: 'lbl' });
+    text(s, m.l + 6, top2 + H2 - 8, 'effektivt R', { class: 'lbl' });
+    dates.forEach((d, i) => { if (d.getUTCDate() <= 7) { text(s, x(i), H - m.b + 18, MONTHS[d.getUTCMonth()], { 'text-anchor': 'middle' }); } });
+    svg('path', { d: path(ex.fitted.map((v, i) => [x(i), y1(Math.max(v, 1))])), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 2 }, s);
+    ex.observed.forEach((v, i) => { if (v != null && v > 0) svg('circle', { cx: x(i), cy: y1(v), r: 3.2, fill: cssv('--ink') }, s); });
+    svg('path', { d: path(ex.rEff.map((v, i) => [x(i), y2(Math.min(1.7, Math.max(0.5, v)))])), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 2 }, s);
+    const tip = tipFor(host);
+    const cross = svg('line', { y1: m.t, y2: top2 + H2, stroke: cssv('--axis'), visibility: 'hidden' }, s);
+    const hit = svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H1 + gap + H2, fill: 'transparent' }, s);
+    hit.addEventListener('pointermove', ev => {
+      const b = s.getBoundingClientRect(); const i = Math.min(n - 1, Math.max(0, Math.round(x.inv((ev.clientX - b.left) * W / b.width))));
+      cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+      const d = dates[i];
+      tip.show(`<b>Vecka ${isoWeek(d)}, till ${fmtDate(d)}</b><div class="row"><span>Observerat</span><span>${ex.observed[i] == null ? '–' : nf(ex.observed[i])}</span></div><div class="row"><span>Modell</span><span>${nf(ex.fitted[i], 0)}</span></div><div class="row"><span>Effektivt R</span><span>${nf(ex.rEff[i], 2)}</span></div><div class="row"><span>Temperatur</span><span>${nf(ex.temperature[i], 1)}\u00a0°C</span></div>`, x(i) * b.width / W, (ev.clientY - b.top));
+    });
+    hit.addEventListener('pointerleave', () => { tip.hide(); cross.setAttribute('visibility', 'hidden'); });
+  });
+    {
+    const ex = D.example; const n = ex.weeks.length;
+    const spans = key => { const out = []; let i = 0; while (i < n) { if (ex[key][i] > 0.25) { let j = i; while (j + 1 < n && ex[key][j + 1] > 0.25) j++; out.push([i, j]); i = j + 1; } else i++; } return out; };
+    const drop = key => { const sp = spans(key)[0]; if (!sp) return null; const before = ex.rEff[Math.max(0, sp[0] - 1)]; const during = Math.min(...ex.rEff.slice(sp[0], sp[1] + 1)); const peakIdx = ex.fitted.indexOf(Math.max(...ex.fitted)); return { before, during, peakWeek: isoWeek(dateOf(ex.weeks[peakIdx])) }; };
+    const j = drop('jul'), sp = drop('sport');
+    const parts = [];
+    if (j) parts.push(`Jullovet sänker det effektiva R från omkring ${nf(j.before, 2)} till ${nf(j.during, 2)}, och tillväxten återkommer när skolan börjar.`);
+    if (sp) parts.push(`Under sportlovet faller R från ${nf(sp.before, 2)} till ${nf(sp.during, 2)}.`);
+    document.getElementById('example-caption').innerHTML = `<b>Figur 5.</b> Överst veckofall (logaritmisk skala) med modellens anpassning. Nederst det effektiva reproduktionstalet, med lovperioderna markerade. ${parts.join(' ')}`;
+  }
+
+
+  // ---------------------------------------------------------------- Figure 6: retrospective
+  const state = { loc: 'SE', scale: 'log', round: 12 };
+  const locSeg = document.getElementById('loc-seg');
+  locSeg.innerHTML = LOCS.map(l => `<button type="button" data-loc="${l}" aria-pressed="${l === state.loc}">${LOC_LABEL[l]}</button>`).join('');
+  const scaleSeg = document.getElementById('scale-seg');
+  scaleSeg.innerHTML = `<button type="button" data-scale="log" aria-pressed="true">Logaritmisk</button><button type="button" data-scale="lin" aria-pressed="false">Linjär</button>`;
+  const roundInput = document.getElementById('round'), roundOut = document.getElementById('round-out');
+  document.getElementById('retro-legend').innerHTML = `<span><i class="dot" style="background:var(--ink)"></i>Observerat</span><span><i style="background:var(--s1);opacity:.35"></i>Prognoser från alla rundor</span><span><i style="background:var(--s1);height:3px"></i>Vald runda</span><span><i class="band" style="background:var(--band-strong)"></i>80\u00a0% intervall</span><span><i class="band" style="background:var(--band-soft)"></i>95\u00a0% intervall</span>`;
+  const rerenderRetro = mount('fig-retro', (host, W) => {
+    const R = D.retro[state.loc]; const rounds = R.rounds; const rd = rounds[state.round];
+    roundOut.textContent = `${state.round + 1} av ${rounds.length}, referensdatum ${fmtDate(dateOf(rd.ref))}`;
+    const H = Math.round(Math.min(440, Math.max(280, W * 0.46))); const m = { l: 52, r: 16, t: 14, b: 36 };
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const obs = R.observed.filter(o => o.date >= '2025-09-01');
+    const t0 = dateOf('2025-09-01').getTime(), t1 = dateOf('2026-06-14').getTime();
+    const x = lin(t0, t1, m.l, W - m.r);
+    const vmax = Math.max(...obs.map(o => o.value), ...rd.q975.slice(0, 4)) * 1.15;
+    const vmin = state.loc === 'SE' ? 5 : 1;
+    const y = state.scale === 'log' ? logs(vmin, Math.max(vmax, 10), H - m.b, m.t) : lin(0, Math.max(...obs.map(o => o.value)) * 1.25, H - m.b, m.t);
+    const ticks = state.scale === 'log' ? logTicks(vmin, Math.max(vmax, 10)) : niceTicks(0, Math.max(...obs.map(o => o.value)) * 1.25, 5);
+    const clampY = v => state.scale === 'log' ? y(Math.max(v, vmin * 0.6)) : y(Math.max(0, v));
+    for (const t of ticks) { svg('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), class: 'grid' }, s); text(s, m.l - 8, y(t) + 4, nf(t), { 'text-anchor': 'end' }); }
+    for (let mo = 8; mo <= 17; mo++) { const d = new Date(Date.UTC(2025 + Math.floor(mo / 12), mo % 12, 1, 12)); const px = x(d.getTime()); if (px > m.l - 1 && px < W - m.r) { svg('line', { x1: px, x2: px, y1: H - m.b, y2: H - m.b + 4, class: 'axis' }, s); text(s, px, H - m.b + 18, MONTHS[d.getUTCMonth()], { 'text-anchor': 'middle' }); } }
+    svg('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: 'axis' }, s);
+    const clip = svg('clipPath', { id: 'retro-clip' }, s); svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, clip);
+    const g = svg('g', { 'clip-path': 'url(#retro-clip)' }, s);
+    for (const r of rounds) {
+      const pts = [[x(dateOf(r.cutoff).getTime()), clampY(r.last)], ...r.dates.map((d, i) => [x(dateOf(d).getTime()), clampY(r.point[i])])];
+      svg('path', { d: path(pts), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 1.2, opacity: 0.3 }, g);
+    }
+    const band = (lo, hi, fill) => { const up = rd.dates.map((d, i) => [x(dateOf(d).getTime()), clampY(hi[i])]); const dn = rd.dates.map((d, i) => [x(dateOf(d).getTime()), clampY(lo[i])]).reverse(); svg('path', { d: path(up) + 'L' + path(dn).slice(1) + 'Z', fill, stroke: 'none' }, g); };
+    band(rd.q025, rd.q975, cssv('--band-soft')); band(rd.q10, rd.q90, cssv('--band-strong'));
+    svg('path', { d: path(obs.map(o => [x(dateOf(o.date).getTime()), clampY(o.value)])), fill: 'none', stroke: cssv('--ink'), 'stroke-width': 1.5 }, g);
+    for (const o of obs) svg('circle', { cx: x(dateOf(o.date).getTime()), cy: clampY(o.value), r: 2.6, fill: cssv('--ink') }, g);
+    const sel = [[x(dateOf(rd.cutoff).getTime()), clampY(rd.last)], ...rd.dates.map((d, i) => [x(dateOf(d).getTime()), clampY(rd.point[i])])];
+    svg('path', { d: path(sel), fill: 'none', stroke: cssv('--s1'), 'stroke-width': 3, 'stroke-linejoin': 'round' }, g);
+    for (const p of sel.slice(1)) svg('circle', { cx: p[0], cy: p[1], r: 4.5, fill: cssv('--s1'), stroke: cssv('--surface'), 'stroke-width': 2 }, g);
+    const cx = x(dateOf(rd.cutoff).getTime());
+    svg('line', { x1: cx, x2: cx, y1: m.t, y2: H - m.b, stroke: cssv('--axis'), 'stroke-width': 1 }, s);
+    text(s, cx + 5, m.t + 12, 'cutoff', { class: 'lbl' });
+    const tip = tipFor(host);
+    const hit = svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, s);
+    const obsMap = Object.fromEntries(R.observed.map(o => [o.date, o.value]));
+    hit.addEventListener('pointermove', ev => {
+      const b = s.getBoundingClientRect(); const px = (ev.clientX - b.left) * W / b.width; const tm = x.inv(px);
+      let best = null, bd = Infinity; for (const o of obs) { const dd = Math.abs(dateOf(o.date).getTime() - tm); if (dd < bd) { bd = dd; best = o; } }
+      if (!best) return; const d = dateOf(best.date); const hIdx = rd.dates.indexOf(best.date);
+      let html = `<b>Vecka ${isoWeek(d)}, till ${fmtDate(d)}</b><div class="row"><span>Observerat</span><span>${nf(obsMap[best.date])}</span></div>`;
+      if (hIdx >= 0) html += `<div class="row"><span>Prognos, horisont ${hIdx}</span><span>${nf(rd.point[hIdx])}</span></div><div class="row"><span>80\u00a0% intervall</span><span>${nf(rd.q10[hIdx])} till ${nf(rd.q90[hIdx])}</span></div>`;
+      tip.show(html, x(d.getTime()) * b.width / W, (ev.clientY - b.top));
+    });
+    hit.addEventListener('pointerleave', () => tip.hide());
+  });
+  locSeg.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; state.loc = b.dataset.loc; [...locSeg.children].forEach(c => c.setAttribute('aria-pressed', c === b)); rerenderRetro(); });
+  scaleSeg.addEventListener('click', ev => { const b = ev.target.closest('button'); if (!b) return; state.scale = b.dataset.scale; [...scaleSeg.children].forEach(c => c.setAttribute('aria-pressed', c === b)); rerenderRetro(); });
+  roundInput.addEventListener('input', () => { state.round = +roundInput.value; rerenderRetro(); });
+
+  // ---------------------------------------------------------------- Figure 7: MAE small multiples
+  const MAE_MODELS = [['SEIR (denna modell)', '--s1'], ['Persistens', '--s2'], ['Dämpad trend', '--s3']];
+  document.getElementById('mae-legend').innerHTML = MAE_MODELS.map(([n, c]) => `<span><i style="background:var(${c})"></i>${n}</span>`).join('');
+  mount('fig-mae', (host, W) => {
+    const cols = W < 640 ? 1 : 3; const pw = (W - (cols - 1) * 18) / cols; const ph = 200;
+    const rowsN = Math.ceil(LOCS.length / cols); const H = rowsN * (ph + 34) + 6;
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const tip = tipFor(host);
+    LOCS.forEach((loc, k) => {
+      const ox = (k % cols) * (pw + 18), oy = Math.floor(k / cols) * (ph + 34);
+      const M = D.hub.points[loc]; const m = { l: 46, r: 12, t: 24, b: 34 };
+      const vmax = Math.max(...MAE_MODELS.flatMap(([n]) => M[n].mae)) * 1.12;
+      const x = lin(0, 3, ox + m.l, ox + pw - m.r), y = lin(0, vmax, oy + ph - m.b + 20, oy + m.t);
+      text(s, ox + m.l - 36, oy + 13, LOC_LABEL[loc], { class: 'lbl-strong' });
+      for (const t of niceTicks(0, vmax, 4)) { svg('line', { x1: ox + m.l, x2: ox + pw - m.r, y1: y(t), y2: y(t), class: t === 0 ? 'axis' : 'grid' }, s); text(s, ox + m.l - 7, y(t) + 4, nf(t), { 'text-anchor': 'end' }); }
+      for (const h of [0, 1, 2, 3]) text(s, x(h), oy + ph + 4, 'h' + h, { 'text-anchor': 'middle' });
+      for (const [n, c] of MAE_MODELS) {
+        const col = cssv(c);
+        svg('path', { d: path(M[n].mae.map((v, h) => [x(h), y(v)])), fill: 'none', stroke: col, 'stroke-width': 2 }, s);
+        M[n].mae.forEach((v, h) => svg('circle', { cx: x(h), cy: y(v), r: 4, fill: col, stroke: cssv('--surface'), 'stroke-width': 2 }, s));
+      }
+      const hit = svg('rect', { x: ox + m.l, y: oy + m.t, width: pw - m.l - m.r, height: ph - m.t - m.b + 20, fill: 'transparent' }, s);
+      hit.addEventListener('pointermove', ev => {
+        const b = s.getBoundingClientRect(); const px = (ev.clientX - b.left) * W / b.width; const h = Math.min(3, Math.max(0, Math.round(x.inv(px))));
+        tip.show(`<b>${LOC_LABEL[loc]}, horisont ${h}</b>` + MAE_MODELS.map(([n, c]) => `<div class="row"><span><span class="sw" style="background:var(${c})"></span>${n}</span><span>${nf(M[n].mae[h], 1)}</span></div>`).join(''), x(h) * b.width / W, (ev.clientY - b.top));
+      });
+      hit.addEventListener('pointerleave', () => tip.hide());
+    });
+  });
+  const allModels = ['SEIR (denna modell)', 'Persistens', 'Dämpad trend', 'Medel av 3 veckor'];
+  document.getElementById('tbl-mae').innerHTML = `<thead><tr><th>Region och modell</th><th>MAE h0</th><th>h1</th><th>h2</th><th>h3</th><th>RMSE h0</th><th>h1</th><th>h2</th><th>h3</th></tr></thead><tbody>` +
+    LOCS.flatMap(loc => allModels.map(n => { const M = D.hub.points[loc][n]; return `<tr><td>${LOC_LABEL[loc]}, ${n}</td>${M.mae.map(v => `<td>${nf(v, 1)}</td>`).join('')}${M.rmse.map(v => `<td>${nf(v, 1)}</td>`).join('')}</tr>`; })).join('') + '</tbody>';
+  const pw = D.probWis;
+  const skill = (loc, h) => nf(pw[loc].skill[h], 2);
+    {
+    const hp = D.hub.points;
+    const better = loc => [0, 1, 2, 3].filter(h => hp[loc]['SEIR (denna modell)'].mae[h] < hp[loc]['Persistens'].mae[h]);
+    const hlist = hs => hs.length === 4 ? 'alla horisonter' : hs.length === 0 ? 'ingen horisont' : (hs.length === 1 ? `horisont ${hs[0]}` : `horisont ${hs.slice(0, -1).join(', ')} och ${hs[hs.length - 1]}`);
+    const cut0 = loc => Math.round((1 - hp[loc]['SEIR (denna modell)'].mae[0] / hp[loc]['Persistens'].mae[0]) * 100);
+    const qb = D.hub.qra;
+    const improved = LOCS.flatMap(l => [0, 1, 2, 3].map(h => qb[l].after[h] > qb[l].before[h])).filter(Boolean).length;
+    const worseBy = LOCS.map(l => [l, [0, 1, 2, 3].filter(h => qb[l].after[h] < qb[l].before[h])]).filter(([, hs]) => hs.length);
+    const nWorse = worseBy.reduce((a, [, hs]) => a + hs.length, 0);
+    const worseText = worseBy.map(([l, hs]) => `${LOC_LABEL[l]} på horisont ${hs.length > 1 ? hs.slice(0, -1).join(', ') + ' och ' + hs[hs.length - 1] : hs[0]}`).join(' och ');
+    const cov95 = loc => Math.round(100 * pw[loc].cov95.reduce((a, b) => a + b) / 4);
+    const cov50 = loc => Math.round(100 * pw[loc].cov50.reduce((a, b) => a + b) / 4);
+    document.getElementById('retro-prose').innerHTML = `
+    <p>Modellen är bäst i Skåne, där den slår persistens på ${hlist(better('SE-M'))} och har ${cut0('SE-M')}\u00a0% lägre fel för nuläget. För hela Sverige är den bättre än persistens på ${hlist(better('SE'))}, med ${cut0('SE')}\u00a0% lägre fel för nuläget. I Västra Götaland är den bättre på ${hlist(better('SE-O'))} och sämre längre fram. I genomsnitt över horisonterna är felet ${nf(rel['SE'], 2)}, ${nf(rel['SE-M'], 2)} och ${nf(rel['SE-O'], 2)} gånger persistensens, mot 0,87, 0,45 och 1,10 för den tidigare versionen med gammafördelade stadier.</p>
+    <p>De största felen för hela Sverige kommer i slutet av november och början av december, när tillväxten var explosiv och modellen förde den vidare, och från jul till mitten av januari, när den förutsåg mer tillväxt och en kraftigare återhämtning efter jullovet än den som kom. I Västra Götaland står januari för ungefär hälften av det samlade felet, och i alla tre regionerna missade modellen den andra toppen i februari.</p>
+    <p>Modellens egna prediktionsintervall kan jämföras med hubbens probabilistiska baslinje (normal-MA3) med viktad intervallpoäng, WIS. Skill mot baslinjen är för Sverige ${skill('SE', 0)}, ${skill('SE', 1)}, ${skill('SE', 2)} och ${skill('SE', 3)} på horisont 0 till 3, för Skåne ${skill('SE-M', 0)}, ${skill('SE-M', 1)}, ${skill('SE-M', 2)} och ${skill('SE-M', 3)}, och för Västra Götaland ${skill('SE-O', 0)}, ${skill('SE-O', 1)}, ${skill('SE-O', 2)} och ${skill('SE-O', 3)}. Positiva värden betyder lägre WIS än baslinjen. För Sverige, Skåne och Västra Götaland täcker de 95-procentiga intervallen i genomsnitt ${cov95('SE')}\u00a0%, ${cov95('SE-M')}\u00a0% och ${cov95('SE-O')}\u00a0% av utfallen och de 50-procentiga ${cov50('SE')}\u00a0%, ${cov50('SE-M')}\u00a0% och ${cov50('SE-O')}\u00a0%.</p>
+    <p>Hubbens QRA-ensemble blir bättre i ${improved} av 12 kombinationer av region och horisont när modellen tas med${nWorse ? `; ${nWorse > 1 ? 'undantagen är' : 'undantaget är'} ${worseText}` : ''}. För hela Sverige går skill från ${nf(qb.SE.before[0], 2)} till ${nf(qb.SE.after[0], 2)} på horisont 0 och för Skåne från ${nf(qb['SE-M'].before[1], 2)} till ${nf(qb['SE-M'].after[1], 2)} på horisont 1.</p>`;
+  }
+
+
+  // ---------------------------------------------------------------- ablation table
+  if (abl.length) {
+    const cols = [...LOCS.map(l => ['s', l]), ...LOCS.map(l => ['b', l])];
+    const val = (r, [kind, l]) => kind === 's' ? r[l] : (r.backtest ? r.backtest[l] : null);
+    const best = Object.fromEntries(cols.map(c => [c.join(':'), Math.min(...abl.map(r => val(r, c)).filter(v => v != null))]));
+    const cell = v => { if (v == null) return '<span class="note">–</span>'; const w = Math.min(1, v / 1.6); return `<span class="cellbar"><span>${nf(v, 2)}</span><span class="track"><span class="fill ${v > 1 ? 'worse' : ''}" style="width:${(w * 100).toFixed(0)}%"></span></span></span>`; };
+    document.getElementById('tbl-abl').innerHTML = `<thead><tr><th rowspan="2">Variant</th><th colspan="3" style="text-align:center">2025/26, 33 rundor</th><th colspan="3" style="text-align:center">Backtest 2022/23 till 2024/25</th></tr><tr>${cols.map(([k, l]) => `<th>${LOC_LABEL[l]}</th>`).join('')}</tr></thead><tbody>` +
+      abl.map(r => `<tr><td>${r.label}</td>${cols.map(c => { const v = val(r, c); return `<td class="${v != null && v === best[c.join(':')] ? 'best' : ''}">${cell(v)}</td>`; }).join('')}</tr>`).join('') + '</tbody>';
+  }
+
+  // ---------------------------------------------------------------- Figure 8: 2025/26 weather anomalies
+  mount('fig-weather', (host, W) => {
+    const Wd = D.weather2025; const n = Wd.weeks.length;
+    const H = Math.round(Math.min(230, Math.max(170, W * 0.26))); const m = { l: 44, r: 16, t: 12, b: 34 };
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}` }, host);
+    const lim = Math.max(6, Math.ceil(Math.max(...Wd.anomaly.map(Math.abs))));
+    const x = lin(-0.5, n - 0.5, m.l, W - m.r), y = lin(-lim, lim, H - m.b, m.t);
+    for (const t of niceTicks(-lim, lim, 4)) { svg('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), class: t === 0 ? 'axis' : 'grid' }, s); text(s, m.l - 8, y(t) + 4, (t > 0 ? '+' : '') + nf(t) + '\u00a0°C', { 'text-anchor': 'end' }); }
+    const bw = Math.max(2, (x(1) - x(0)) * 0.72);
+    Wd.anomaly.forEach((v, i) => { const ya = y(Math.max(0, v)), yb = y(Math.min(0, v)); svg('rect', { x: x(i) - bw / 2, y: ya, width: bw, height: Math.max(1, yb - ya), rx: 1.5, fill: v < 0 ? cssv('--s1') : cssv('--s2') }, s); });
+    Wd.weeks.forEach((w, i) => { const d = dateOf(w); if (d.getUTCDate() <= 7) text(s, x(i), H - m.b + 18, MONTHS[d.getUTCMonth()], { 'text-anchor': 'middle' }); });
+    const tip = tipFor(host);
+    const hit = svg('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, s);
+    hit.addEventListener('pointermove', ev => {
+      const b = s.getBoundingClientRect(); const i = Math.min(n - 1, Math.max(0, Math.round(x.inv((ev.clientX - b.left) * W / b.width))));
+      const d = dateOf(Wd.weeks[i]);
+      tip.show(`<b>Vecka ${isoWeek(d)}, till ${fmtDate(d)}</b><div class="row"><span>Medeltemperatur</span><span>${nf(Wd.temperature[i], 1)}\u00a0°C</span></div><div class="row"><span>Mot det normala</span><span>${Wd.anomaly[i] > 0 ? '+' : ''}${nf(Wd.anomaly[i], 1)}\u00a0°C</span></div>`, x(i) * b.width / W, ev.clientY - b.top);
+    });
+    hit.addEventListener('pointerleave', () => tip.hide());
+  });
+    {
+    const main = getAbl('main'), mean = getAbl('main', 'mean'), sigm = getAbl('sigmoid-temperature'), noT = getAbl('no-temperature'),
+      noHol = getAbl('no-holidays'), oracle = getAbl('main-oracle-weather'), none = getAbl('no-holidays-no-temperature');
+    const f2 = v => v == null ? '–' : nf(v, 2);
+    const parts = [];
+    if (main && noHol) parts.push(`<p>Loven är den del som tydligast förbättrar prognoserna. Utan lov stiger det genomsnittliga relativa felet från ${f2(avg(main))} till ${f2(avg(noHol))} för 2025/26${bavg(noHol) != null ? ` och från ${f2(bavg(main))} till ${f2(bavg(noHol))} i backtesterna` : ''}, och skillnaden är störst i Skåne.</p>`);
+    if (main && sigm) {
+      const perSeason = D.backtestBySeason || null;
+      parts.push(`<p>Den log-linjära temperaturtermen ger lägre fel än sigmoiden både 2025/26 (${f2(avg(main))} mot ${f2(avg(sigm))}) och i backtesterna (${f2(bavg(main))} mot ${f2(bavg(sigm))})${perSeason ? `, och den är bättre i ${perSeason.linearWins} av ${perSeason.total} kombinationer av säsong och region, räknat över backtesterna och 2025/26` : ''}. Sigmoiden förklarar alltså historiken bättre men prognostiserar sämre, och därför är den log-linjära termen huvudmodellens val.</p>`);
+    }
+    if (main && noT) {
+      const helpsBack = bavg(noT) != null && bavg(main) < bavg(noT);
+      const helps2526 = avg(main) < avg(noT);
+      let t = `<p>Temperaturen som sådan ger blandat resultat. `;
+      t += helpsBack ? `I backtesterna hjälper den (${f2(bavg(main))} med och ${f2(bavg(noT))} utan)` : `I backtesterna hjälper den inte (${f2(bavg(main))} med och ${f2(bavg(noT))} utan)`;
+      t += helps2526 ? `, och 2025/26 likaså (${f2(avg(main))} mot ${f2(avg(noT))}).` : `, men 2025/26 hade modellen utan temperatur lägre fel (${f2(avg(noT))} mot ${f2(avg(main))}), främst för hela Sverige och Västra Götaland.`;
+      if (oracle) t += ` Med faktisk temperatur efter cutoff blir felet ${f2(avg(oracle))}, så en perfekt väderprognos hade bara tagit bort en del av skillnaden.`;
+      if (!helps2526) t += ` Köldperioderna i slutet av november och i januari (figur 8) fick modellen att räkna med mer smittspridning än den som kom. Temperatursambandet är tydligt i historiken men slår olika hårt från säsong till säsong.`;
+      parts.push(t + `</p>`);
+    }
+    if (mean) parts.push(`<p>Det prediktiva medelvärdet ger klart större fel än förväntat antal vid posteriormoden, ${f2(avg(mean))} mot ${f2(avg(main))} för 2025/26, se avsnittet om punktprognos.</p>`);
+    document.getElementById('abl-prose').innerHTML = parts.join('');
+  }
+
+
+  // ---------------------------------------------------------------- backtest table
+  const bt = D.backtest;
+  if (bt && bt.rows) {
+    const bestB = Object.fromEntries(LOCS.map(l => [l, Math.min(...bt.rows.map(r => r[l]))]));
+    document.getElementById('tbl-backtest').innerHTML = `<thead><tr><th>Punktprognos (${bt.seasons.map(s => s + '/' + String(s + 1).slice(2)).join(', ')})</th>${LOCS.map(l => `<th>${LOC_LABEL[l]}</th>`).join('')}</tr></thead><tbody>` +
+      bt.rows.map(r => `<tr><td>${r.label}</td>${LOCS.map(l => `<td class="${r[l] === bestB[l] ? 'best' : ''}">${nf(r[l], 2)}</td>`).join('')}</tr>`).join('') + '</tbody>';
+  }
+    {
+    const rows = (D.backtest && D.backtest.rows) || [];
+    const r = m => rows.find(x => x.model === m);
+    const map = r('seir-map@rw1'), med = r('seir-median@rw1'), mn = r('seir-mean@rw1');
+    const a3 = x => x ? (x.SE + x['SE-M'] + x['SE-O']) / 3 : null;
+    const best = map && med && mn && LOCS.every(l => map[l] <= med[l] && map[l] <= mn[l]);
+    document.getElementById('point-prose').innerHTML = map ? `<p>Förväntat antal vid posteriormoden, det vill säga modellens förväntade veckoantal givet de mest sannolika parametervärdena, ${best ? 'gav lägst fel av de tre i alla regionerna' : 'gav lägst fel av de tre i genomsnitt'} (${nf(a3(map), 2)} mot ${nf(a3(med), 2)} för medianen och ${nf(a3(mn), 2)} för medelvärdet, relativt persistens) och används i hubbfilerna. Det prediktiva medelvärdet och kvantilerna finns kvar i resultatfilerna och används för prediktionsintervallen i figur 6.</p>` : '';
+  }
+
+    document.getElementById('lim-prose').innerHTML = `
+    <p>Influensa A och B behandlas som en epidemi, så en andra våg av en annan typ syns bara som att slumpvandringen stiger. Det märks i februari 2026, då en andra topp kom efter att modellen förutsett nedgång. Hubben har data per influensatyp, och en tvåstamsversion är ett naturligt nästa steg.</p>
+    <p>Rapportfördröjningen på 11 dagar är en effektiv storhet. Den är längre än inkubation och vårdsökande och tar sannolikt också upp att smittan går från barn till vuxna, som dominerar de rapporterade fallen. En åldersindelad modell skulle beskriva det direkt men kräver data per åldersgrupp.</p>
+    <p>Västra Götaland är svårast. Serien har stora hopp mellan veckor, och modellen tolkar dem delvis som ändrad smittsamhet. En separat skala för slumpvandringen per region, eller en observationsmodell med tyngre svansar, kan hjälpa.</p>
+    <p>Lovens effekter är genomsnitt över hela lovet och skiljer inte skolans bidrag från annat som ändras samtidigt, som resor och ledighet bland vuxna. Temperaturen efter cutoff är klimatologi, så kommande köldperioder är okända för modellen. Den kalla änden av temperaturkurvan vilar på relativt få dygn under −10&nbsp;°C.</p>`;
+
+})();
+</script>

@@ -1,0 +1,53 @@
+{
+  "status": "complete",
+  "method": "LASSO Quantile Regression Averaging (LQRA)",
+  "method_reference_doi": "10.1016/j.eneco.2021.105121",
+  "penalty": "L1 on standardized model coefficients; intercept unpenalized",
+  "standardization": "predictors and outcome standardized within each fit",
+  "temporal_training_rule": "target_end_date <= current reference_date - 7 days",
+  "minimum_training_samples": 8,
+  "quantiles": [
+    0.025,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    0.975
+  ],
+  "alpha_grid": [
+    0.0,
+    0.001,
+    0.01,
+    0.1,
+    1.0
+  ],
+  "alpha_selection": "expanding-window one-step-ahead pinball loss",
+  "component_models": [
+    "brannstrom-seirlovvader",
+    "hubdemo-damped4",
+    "hubdemo-exptrend4",
+    "hubdemo-linear4",
+    "hubdemo-mean3",
+    "hubdemo-mean6",
+    "hubdemo-persistence"
+  ],
+  "qra_forecast_row_count": 1974,
+  "skipped_task_count": 114,
+  "first_qra_reference_date_by_task": {
+    "SE|horizon-0": "2025-11-30",
+    "SE|horizon-1": "2025-12-07",
+    "SE|horizon-2": "2025-12-14",
+    "SE|horizon-3": "2025-12-21",
+    "SE-M|horizon-0": "2025-11-30",
+    "SE-M|horizon-1": "2025-12-07",
+    "SE-M|horizon-2": "2025-12-14",
+    "SE-M|horizon-3": "2025-12-21",
+    "SE-O|horizon-0": "2025-11-30",
+    "SE-O|horizon-1": "2025-12-07",
+    "SE-O|horizon-2": "2025-12-14",
+    "SE-O|horizon-3": "2025-12-21"
+  },
+  "negative_values_truncated_at_zero": true,
+  "quantile_crossings_rearranged": true
+}

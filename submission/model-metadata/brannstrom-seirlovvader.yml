@@ -1,0 +1,42 @@
+model_id: brannstrom-seirlovvader
+team_name: Åke Brännström
+team_abbr: brannstrom
+model_name: SEIR model with school holidays and temperature
+model_abbr: seirlovvader
+model_version: 1.0.0
+model_contributors:
+  - name: Åke Brännström
+    affiliation: Add affiliation before submission
+methods: >-
+  Deterministic SEIR model (ordinary differential equations with exponentially
+  distributed latent and infectious periods, means 1.6 and 2.6 days) with
+  susceptible depletion, solved with a fourth-order Runge-Kutta scheme at two
+  steps per day. Infections are reported after a gamma-distributed delay (mean
+  11 days, chosen by marginal likelihood on earlier seasons) and summed to
+  weekly counts. The log reproduction number is a weekly random walk plus
+  effects of höstlov, jullov, sportlov, påsklov and sommarlov
+  (population-weighted school closure from municipal school calendars) and a
+  log-linear effect of population-weighted daily mean temperature (SMHI
+  stations). A sigmoid temperature effect that levels off in cold and warm
+  weather fitted the training seasons better but gave larger forecast errors
+  in backtests, so the log-linear effect is used. The holiday and temperature
+  effects are estimated jointly on the 2015/16 to 2024/25 seasons (without
+  2020/21 and 2021/22) and enter each forecast as an informative prior. Each
+  location is fitted separately to the current season up to the data cutoff
+  with a negative binomial likelihood. The submitted value is the expected
+  weekly count at the posterior mode; weather after the cutoff is climatology
+  plus a decaying anomaly.
+method_category: mechanistic
+data_sources:
+  - Swedish Influenza Forecast Hub target data
+  - SMHI open data, daily mean air temperature (CC BY 4.0)
+  - Skolporten, Grundskolans läsårstider (municipal school calendars)
+  - Statistics Sweden, municipal population 2024
+software:
+  - Python 3.11
+  - JAX
+  - NumPy, SciPy and pandas
+code_repository: null
+code_license: null
+license: CC-BY-4.0
+designated_model: true

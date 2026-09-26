@@ -1,0 +1,17 @@
+{
+  "status": "complete",
+  "comparison": "regularized QRA versus hub-normalma3",
+  "task_rule": "only tasks for which both QRA and baseline forecasts exist",
+  "wis_skill_definition": "1 - mean_qra_wis / mean_baseline_wis",
+  "positive_wis_skill_means": "QRA has lower mean WIS than the baseline",
+  "qra_score_count": 282,
+  "baseline_score_count": 396,
+  "common_task_count": 282,
+  "location_horizon_group_count": 12,
+  "coverage_levels": [
+    0.5,
+    0.8,
+    0.95
+  ],
+  "interval_width_reported_separately": false
+}

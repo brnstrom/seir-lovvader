@@ -1,0 +1,17 @@
+{
+  "status": "complete",
+  "model_count": 7,
+  "models": [
+    "brannstrom-seirlovvader",
+    "hubdemo-damped4",
+    "hubdemo-exptrend4",
+    "hubdemo-linear4",
+    "hubdemo-mean3",
+    "hubdemo-mean6",
+    "hubdemo-persistence"
+  ],
+  "forecast_file_count": 231,
+  "matched_row_count": 2772,
+  "first_reference_date": "2025-10-05",
+  "last_reference_date": "2026-05-17"
+}

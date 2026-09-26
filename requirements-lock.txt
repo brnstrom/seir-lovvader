@@ -1,0 +1,8 @@
+# Exact versions used for the retrospective runs and by the weekly workflow.
+jax==0.10.2
+jaxlib==0.10.2
+numpy==2.4.4
+scipy==1.17.1
+pandas==3.0.2
+holidays==0.105
+requests==2.33.1

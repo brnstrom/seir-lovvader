@@ -1,0 +1,31 @@
+{
+  "status": "complete",
+  "method": "weighted interval score and empirical interval coverage",
+  "method_reference_doi": "10.1371/journal.pcbi.1008618",
+  "metrics": [
+    "wis",
+    "coverage_50",
+    "coverage_80",
+    "coverage_95"
+  ],
+  "wis_definition": "[0.5*absolute_median_error + sum(alpha/2*interval_score_alpha)] / (K+0.5), with K=3",
+  "central_intervals": {
+    "50": [
+      0.25,
+      0.75
+    ],
+    "80": [
+      0.1,
+      0.9
+    ],
+    "95": [
+      0.025,
+      0.975
+    ]
+  },
+  "coverage_boundary_inclusive": true,
+  "interval_width_reported_separately": false,
+  "ranking_created": false,
+  "qra_task_score_count": 282,
+  "location_horizon_group_count": 12
+}

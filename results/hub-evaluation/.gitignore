@@ -1,0 +1,4 @@
+# Large intermediates; regenerate with scripts/hub_evaluation.py
+matched-forecasts.csv
+qra-coefficients.csv
+qra-forecasts.csv
