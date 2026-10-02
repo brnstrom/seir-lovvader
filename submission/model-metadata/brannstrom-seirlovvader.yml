@@ -6,7 +6,7 @@ model_abbr: seirlovvader
 model_version: 1.0.0
 model_contributors:
   - name: Åke Brännström
-    affiliation: Add affiliation before submission
+    affiliation: Integrated Science Lab (IceLab), Umeå University
 methods: >-
   Deterministic SEIR model (ordinary differential equations with exponentially
   distributed latent and infectious periods, means 1.6 and 2.6 days) with
@@ -36,7 +36,7 @@ software:
   - Python 3.11
   - JAX
   - NumPy, SciPy and pandas
-code_repository: null
-code_license: null
+code_repository: https://github.com/brnstrom/seir-lovvader
+code_license: MIT
 license: CC-BY-4.0
 designated_model: true
