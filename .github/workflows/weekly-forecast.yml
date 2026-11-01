@@ -131,7 +131,7 @@ jobs:
             echo "Nothing new to record."
           else
             git commit -m "Live forecast for ${REF_DATE}"
-            git pull --rebase --quiet
+            git pull --rebase --autostash --quiet
             git push
           fi
 
